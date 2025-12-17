@@ -27,7 +27,7 @@ class InputData(BaseModel):
     # valence	
     # tempo	
 
-    # Ex: "data":[0.598,0.705,-5.525,0.497,0.0362,0.497,0.000128,0.0878,75.023]
+    # Ex: [0.598,0.705,-5.525,0.497,0.0362,0.497,0.000128,0.0878,75.023]
 
 @app.post("/predict")
 def predict(item: InputData):
@@ -44,11 +44,6 @@ def predict(item: InputData):
         "softmax": preds[0].tolist(),
         "predicted_class": int(np.argmax(preds[0]))
     }
-
-#command via cURL:
-# curl -X POST http://127.0.0.1:8000/predict \
-# -H "Content-Type: application/json" \
-# -d '{"data":[0.598,0.705,-5.525,0.497,0.0362,0.497,0.000128,0.0878,75.023]}'
 
 # sample output:
  #{"softmax":[0.002706807805225253,0.19403111934661865,0.8031859993934631,7.602207188028842e-05],"predicted_class":2}
