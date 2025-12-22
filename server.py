@@ -6,6 +6,9 @@ import joblib
 
 EXPECTED_FEATURES = 9
 
+# Define class labels (adjust as needed based on your model's classes)
+CLASS_LABELS = ["sad", "happy", "energitic", "calm"]
+
 # Load artifacts (must be in same folder)
 scaler = joblib.load("scaler.pkl")
 model = tf.keras.models.load_model("model.h5")
@@ -15,35 +18,40 @@ app = FastAPI()
 
 # Input schema
 class InputData(BaseModel):
-    data: list[float]
-    # order:-
-    # danceability	
-    # energy	
-    # loudness	
-    # speechiness	
-    # acousticness	
-    # instrumentalness	
-    # liveness	
-    # valence	
-    # tempo	
-
-    # Ex: [0.598,0.705,-5.525,0.497,0.0362,0.497,0.000128,0.0878,75.023]
+    danceability: float
+    energy: float
+    loudness: float
+    speechiness: float
+    acousticness: float
+    instrumentalness: float
+    liveness: float
+    valence: float
+    tempo: float
 
 @app.post("/predict")
 def predict(item: InputData):
-    if len(item.data) != EXPECTED_FEATURES:
-        return {
-            "error": f"Expected {EXPECTED_FEATURES} features, got {len(item.data)}"
-        }
-
-    x = np.array(item.data, dtype=np.float32).reshape(1, -1)
+    # Extract features in the correct order
+    features = [
+        item.danceability,
+        item.energy,
+        item.loudness,
+        item.speechiness,
+        item.acousticness,
+        item.instrumentalness,
+        item.liveness,
+        item.valence,
+        item.tempo
+    ]
+    
+    x = np.array(features, dtype=np.float32).reshape(1, -1)
     x_scaled = scaler.transform(x)
     preds = model.predict(x_scaled)
-
+    
+    # Create predictions dictionary with labels
+    predictions = {CLASS_LABELS[i]: float(preds[0][i]) for i in range(len(CLASS_LABELS))}
+    predicted_class = CLASS_LABELS[int(np.argmax(preds[0]))]
+    
     return {
-        "softmax": preds[0].tolist(),
-        "predicted_class": int(np.argmax(preds[0]))
+        "predictions": predictions,
+        "predicted_class": predicted_class
     }
-
-# sample output:
- #{"softmax":[0.002706807805225253,0.19403111934661865,0.8031859993934631,7.602207188028842e-05],"predicted_class":2}
